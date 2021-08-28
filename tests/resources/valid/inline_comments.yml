@@ -1,0 +1,4 @@
+first: value # followed by a comment
+second:
+  third: value # another comment
+fourth: but this hash# is not a comment

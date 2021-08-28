@@ -27,7 +27,12 @@ def parse(text: str) -> dict:
     root = Root(children=[])
     parent: Union["Node", Root] = root
 
-    for line in text.strip().split("\n"):
+    for raw_line in text.strip().split("\n"):
+        line = _remove_comments(raw_line)
+        if not line:
+            continue
+
+
         indent = count_indent(line)
 
         while not isinstance(parent, Root) and parent.indent >= indent:
@@ -42,6 +47,16 @@ def parse(text: str) -> dict:
             parent = node
 
     return _to_dict(root)
+
+
+def _remove_comments(line: str) -> str:
+    comment_start_idx = line.find("#")
+    if _is_comment_hash_at(line, comment_start_idx):
+        return line[:comment_start_idx].rstrip()
+    return line
+
+def _is_comment_hash_at(line: str, idx: int) -> bool:
+    return idx == 0 or idx > 0 and line[idx - 1].isspace()
 
 
 def _to_dict(root: Root) -> dict:
