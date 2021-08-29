@@ -4,7 +4,7 @@ from typing import List
 import pytest
 import yaml
 
-import yamlite
+import yamliny
 
 RESOURCES = pathlib.Path(__file__).parent / "resources"
 VALID_INPUTS = RESOURCES / "valid"
@@ -30,10 +30,10 @@ def _get_file_ids(files):
 def test_parses_valid_input_like_pyyaml(input_file: pathlib.Path):
     raw = input_file.read_text(encoding=ENCODING)
 
-    yamlited = yamlite.loads(raw)
+    yamlined = yamliny.loads(raw)
     pyyamled = yaml.load(raw, Loader=yaml.SafeLoader)
 
-    assert yamlited == pyyamled
+    assert yamlined == pyyamled
 
 
 def _find_invalid_inputs():
@@ -52,11 +52,11 @@ def test_raises_on_invalid_input(input_file: pathlib.Path):
     first_line, *_ = raw.split("\n")
     expected_error_msg = _parse_expected_error_message(first_line)
 
-    with pytest.raises(yamlite.YamliteError) as exc_info:
-        yamlite.loads(raw)
+    with pytest.raises(yamliny.YamlinyError) as exc_info:
+        yamliny.loads(raw)
 
     assert expected_error_msg in str(exc_info.value)
 
 
 def _parse_expected_error_message(line: str) -> str:
-    return line[line.index(yamlite._COMMENT_CHAR) + 1 :].strip()
+    return line[line.index(yamliny._COMMENT_CHAR) + 1 :].strip()

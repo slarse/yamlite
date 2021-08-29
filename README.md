@@ -1,32 +1,32 @@
-# YAMLite - parser for a tiny subset of YAML
+# YAMLiny - a tiny parser for a tiny subset of YAML
 
-YAMLite is a parser for a tiny subset of YAML syntax, although behavior
+YAMLiny is a parser for a tiny subset of YAML syntax, although behavior
 may differ slightly in certain scenarios.
 
 ## Install
 
-YAMLite is on PyPi, install with pip.
+YAMLiny is on PyPi, install with pip.
 
 ```bash
-pip install yamlite
+pip install yamliny
 ```
 
 ## Usage
 
-YAMLite currently only has parsing functionality.
+YAMLiny currently only has parsing functionality.
 
 ```python
-import yamlite
+import yamliny
 
-# this is pretty much the entirety of what you can do with YAMLite syntax at the moment
-yamlite_text = """
+# this is pretty much the entirety of what you can do with YAMLiny syntax at the moment
+yamliny_text = """
 key: value
 multivalue-key: # you can also use inline comments!
     array: [one, two, three]
     key: value
 """.strip()
 
-content = yamlite.loads(yamlite_text)
+content = yamliny.loads(yamliny_text)
 # content is a dict with:
 # {'key': 'value',
 #  'multivalue-key': {'array': ['one', 'two', 'three'], 'key': 'value'}}

@@ -7,7 +7,7 @@ import dataclasses
 
 from typing import Union, List, Optional, cast
 
-__all__ = ["YamliteError", "loads"]
+__all__ = ["YamlinyError", "loads"]
 
 _LINE_PATTERN = re.compile(r"^[-_\w]+:")
 _KEY_DELIMITER = ":"
@@ -38,7 +38,7 @@ class _Node:
     is_terminal: bool
 
 
-class YamliteError(RuntimeError):
+class YamlinyError(RuntimeError):
     pass
 
 
@@ -60,7 +60,7 @@ def loads(text: str) -> dict:
                 parent = parent.parent
 
             if parent.is_terminal:
-                raise YamliteError("bad indentation")
+                raise YamlinyError("bad indentation")
             
             key, rest = stripped.split(_KEY_DELIMITER)
             value: _Value = [] if not rest else _parse_terminal_value(rest)
@@ -79,12 +79,12 @@ def _insert_line_number_in_error(line_nr: int):
     try:
         yield
     except Exception as exc:
-        raise YamliteError(f"Line {line_nr}: {str(exc)}") from exc
+        raise YamlinyError(f"Line {line_nr}: {str(exc)}") from exc
 
 
 def _check_line_syntax(line: str) -> None:
     if not re.match(_LINE_PATTERN, line):
-        raise YamliteError("expected line to start with '<key>:'")
+        raise YamlinyError("expected line to start with '<key>:'")
 
 
 def _remove_comments(line: str) -> str:
@@ -105,7 +105,7 @@ def _parse_terminal_value(raw_value: str) -> Union[str, List[str]]:
 
 def _parse_array(stripped: str) -> List[str]:
     if not stripped.endswith("]"):
-        raise YamliteError(f"array must start and end on same line")
+        raise YamlinyError(f"array must start and end on same line")
     return [value.strip() for value in stripped[1:-1].split(",")]
 
 
@@ -134,7 +134,7 @@ def _check_consistent_indent(value: List[_Node]) -> None:
     expected_indent = nodes[0].indent
     for node in nodes[1:]:
         if node.indent != expected_indent:
-            raise YamliteError(
+            raise YamlinyError(
                 f"Line {node.line_nr}: bad indentation, "
                 f"expected {expected_indent} but was {node.indent}"
             )

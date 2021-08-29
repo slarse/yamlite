@@ -13,21 +13,21 @@ with open("src/__version.py", mode="r", encoding="utf-8") as f:
 test_requirements = ["pytest>=4.0.0", "pyyaml"]
 
 setup(
-    name="yamlite",
+    name="yamliny",
     version=__version__,
     description="Parser for a tiny subset of YAML; YAML lite",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@slar.se",
-    url="https://github.com/slarse/yamlite",
+    url="https://github.com/slarse/yamliny",
     download_url=(
-        "https://github.com/slarse/yamlite/archive/v{}.tar.gz".format(__version__)
+        "https://github.com/slarse/yamliny/archive/v{}.tar.gz".format(__version__)
     ),
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=("tests", "docs")),
-    py_modules=["yamlite"],
+    py_modules=["yamliny"],
     tests_require=test_requirements,
     extras_require=dict(TEST=test_requirements),
     include_package_data=True,
