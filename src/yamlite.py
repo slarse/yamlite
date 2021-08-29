@@ -5,7 +5,7 @@ import sys
 
 import dataclasses
 
-from typing import Union, List, Optional
+from typing import Union, List, Optional, cast
 
 __all__ = ["YamliteError", "loads"]
 
@@ -15,7 +15,8 @@ _KEY_DELIMITER = ":"
 _COMMENT_CHAR = "#"
 
 
-_Value = Union[str, List["_Node"], List[str]]
+_TerminalValue = Union[str, List[str]]
+_Value = Union[List["_Node"], _TerminalValue]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -60,12 +61,13 @@ def loads(text: str) -> dict:
 
             if parent.is_terminal:
                 raise YamliteError("bad indentation")
-
+            
             key, rest = stripped.split(_KEY_DELIMITER)
-            value = [] if not rest else _parse_terminal_value(rest)
+            value: _Value = [] if not rest else _parse_terminal_value(rest)
             node = _Node(key, indent, parent, value, line_nr, not not rest)
 
-            parent.value.append(node)
+            assert isinstance(parent.value, list)
+            cast(List[_Node], parent.value).append(node)
 
             parent = node
 
@@ -111,19 +113,19 @@ def _to_dict(root: _Root) -> dict:
     return {node.key: _children_to_dict(node) for node in root.value}
 
 
-def _children_to_dict(node: _Node) -> Optional[Union[dict, str]]:
-    value = node.value
-    if not value:
+def _children_to_dict(node: _Node) -> Union[_TerminalValue, dict, None]:
+    if not node.value:
         return None
 
     if node.is_terminal:
-        return value
+        return cast(_TerminalValue, node.value)
     else: # is List[_Node]
+        value = cast(List[_Node], node.value)
         _check_consistent_indent(value)
         return {child.key: _children_to_dict(child) for child in value}
 
 
-def _check_consistent_indent(value: _Value) -> None:
+def _check_consistent_indent(value: List[_Node]) -> None:
     if not value:
         return
 
