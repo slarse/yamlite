@@ -1,4 +1,5 @@
 import pathlib
+from typing import List
 
 import pytest
 import yaml
@@ -19,7 +20,13 @@ def _find_valid_inputs():
     ]
 
 
-@pytest.mark.parametrize("input_file", _find_valid_inputs())
+def _get_file_ids(files):
+    return [file.name for file in files]
+
+
+@pytest.mark.parametrize(
+    "input_file", _find_valid_inputs(), ids=_get_file_ids(_find_valid_inputs())
+)
 def test_parses_valid_input_like_pyyaml(input_file: pathlib.Path):
     raw = input_file.read_text(encoding=ENCODING)
 
@@ -37,7 +44,9 @@ def _find_invalid_inputs():
     ]
 
 
-@pytest.mark.parametrize("input_file", _find_invalid_inputs())
+@pytest.mark.parametrize(
+    "input_file", _find_invalid_inputs(), ids=_get_file_ids(_find_invalid_inputs())
+)
 def test_raises_on_invalid_input(input_file: pathlib.Path):
     raw = input_file.read_text(encoding=ENCODING)
     first_line, *_ = raw.split("\n")
