@@ -22,6 +22,10 @@ _Value = Union[str, List["_Node"], List[str]]
 class _Root:
     value: List["_Node"]
 
+    @property
+    def is_terminal(self):
+        return False
+
 
 @dataclasses.dataclass(frozen=True)
 class _Node:
@@ -54,13 +58,16 @@ def loads(text: str) -> dict:
             while not isinstance(parent, _Root) and parent.indent >= indent:
                 parent = parent.parent
 
+            if parent.is_terminal:
+                raise YamliteError("bad indentation")
+
             key, rest = stripped.split(_KEY_DELIMITER)
             value = [] if not rest else _parse_terminal_value(rest)
             node = _Node(key, indent, parent, value, line_nr, not not rest)
+
             parent.value.append(node)
 
-            if not value:
-                parent = node
+            parent = node
 
     return _to_dict(root)
 
