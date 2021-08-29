@@ -26,7 +26,7 @@ class Node:
     line_nr: int
 
 
-class YamlikeError(RuntimeError):
+class YamliteError(RuntimeError):
     pass
 
 
@@ -87,7 +87,7 @@ def _check_consistent_indent(nodes: List[Node]) -> None:
     expected_indent = nodes[0].indent
     for node in nodes[1:]:
         if node.indent != expected_indent:
-            raise YamlikeError(
+            raise YamliteError(
                 f"Line {node.line_nr}: bad indentation, "
                 f"expected {expected_indent} "
                 f"but was {node.indent}"

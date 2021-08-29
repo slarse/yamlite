@@ -3,7 +3,7 @@ import pathlib
 import pytest
 import yaml
 
-import yamlike
+import yamlite
 
 RESOURCES = pathlib.Path(__file__).parent / "resources"
 VALID_INPUTS = RESOURCES / "valid"
@@ -23,10 +23,10 @@ def _find_valid_inputs():
 def test_parses_valid_input_like_pyyaml(input_file: pathlib.Path):
     raw = input_file.read_text(encoding=ENCODING)
 
-    yamliked = yamlike.parse(raw)
+    yamlited = yamlite.parse(raw)
     pyyamled = yaml.load(raw, Loader=yaml.SafeLoader)
 
-    assert yamliked == pyyamled
+    assert yamlited == pyyamled
 
 
 def _find_invalid_inputs():
@@ -43,11 +43,11 @@ def test_raises_on_invalid_input(input_file: pathlib.Path):
     first_line, *_ = raw.split("\n")
     expected_error_msg = _parse_expected_error_message(first_line)
 
-    with pytest.raises(yamlike.YamlikeError) as exc_info:
-        yamlike.parse(raw)
+    with pytest.raises(yamlite.YamliteError) as exc_info:
+        yamlite.parse(raw)
 
     assert expected_error_msg in str(exc_info.value)
 
 
 def _parse_expected_error_message(line: str) -> str:
-    return line[line.index(yamlike.COMMENT_CHAR) + 1 :].strip()
+    return line[line.index(yamlite.COMMENT_CHAR) + 1 :].strip()

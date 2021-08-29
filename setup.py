@@ -25,23 +25,23 @@ test_requirements = [
 ]
 
 setup(
-    name="yamlike",
+    name="yamlite",
     version=__version__,
-    description="Parser for a tiny subset of YAML",
+    description="Parser for a tiny subset of YAML; YAML lite",
     long_description=readme,
     long_description_content_type="text/markdown",
     author="Simon Larsén",
     author_email="slarse@slar.se",
-    url="https://github.com/slarse/yamlike",
+    url="https://github.com/slarse/yamlite",
     download_url=(
-        "https://github.com/slarse/yamlike/archive/v{}.tar.gz".format(
+        "https://github.com/slarse/yamlite/archive/v{}.tar.gz".format(
             __version__
         )
     ),
     license="MIT",
     package_dir={"": "src"},
     packages=find_packages(where="src", exclude=("tests", "docs")),
-    py_modules=["yamlike"],
+    py_modules=["yamlite"],
     tests_require=test_requirements,
     extras_require=dict(TEST=test_requirements),
     include_package_data=True,
