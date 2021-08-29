@@ -50,4 +50,4 @@ def test_raises_on_invalid_input(input_file: pathlib.Path):
 
 
 def _parse_expected_error_message(line: str) -> str:
-    return line[line.index(yamlite.COMMENT_CHAR) + 1 :].strip()
+    return line[line.index(yamlite._COMMENT_CHAR) + 1 :].strip()

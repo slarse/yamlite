@@ -7,26 +7,28 @@ import dataclasses
 
 from typing import Union, List, Optional
 
+__all__ = ["YamliteError", "loads"]
+
 _LINE_PATTERN = re.compile(r"^[-_\w]+:")
 _KEY_DELIMITER = ":"
 
-COMMENT_CHAR = "#"
+_COMMENT_CHAR = "#"
 
 
-Value = Union[str, "Node", List[str]]
-
-
-@dataclasses.dataclass(frozen=True)
-class Root:
-    children: List["Node"]
+_Value = Union[str, "_Node", List[str]]
 
 
 @dataclasses.dataclass(frozen=True)
-class Node:
+class _Root:
+    children: List["_Node"]
+
+
+@dataclasses.dataclass(frozen=True)
+class _Node:
     key: str
     indent: int
-    parent: Union["Node", Root]
-    children: List[Value]
+    parent: Union["_Node", _Root]
+    children: List[_Value]
     line_nr: int
 
 
@@ -35,8 +37,8 @@ class YamliteError(RuntimeError):
 
 
 def loads(text: str) -> dict:
-    root = Root(children=[])
-    parent: Union["Node", Root] = root
+    root = _Root(children=[])
+    parent: Union["_Node", _Root] = root
 
     for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
         with _insert_line_number_in_error(line_nr):
@@ -46,14 +48,14 @@ def loads(text: str) -> dict:
             stripped = line.strip()
             _check_line_syntax(stripped)
 
-            indent = count_indent(line)
+            indent = _count_indent(line)
 
-            while not isinstance(parent, Root) and parent.indent >= indent:
+            while not isinstance(parent, _Root) and parent.indent >= indent:
                 parent = parent.parent
 
             key, rest = stripped.split(_KEY_DELIMITER)
             children = [] if not rest else [_parse_terminal_value(rest)]
-            node = Node(key, indent, parent, children, line_nr)
+            node = _Node(key, indent, parent, children, line_nr)
             parent.children.append(node)
 
             if not children:
@@ -76,7 +78,7 @@ def _check_line_syntax(line: str) -> None:
 
 
 def _remove_comments(line: str) -> str:
-    comment_start_idx = line.find(COMMENT_CHAR)
+    comment_start_idx = line.find(_COMMENT_CHAR)
     if _is_comment_hash_at(line, comment_start_idx):
         return line[:comment_start_idx].rstrip()
     return line
@@ -97,24 +99,24 @@ def _parse_array(stripped: str) -> List[str]:
     return [value.strip() for value in stripped[1:-1].split(",")]
 
 
-def _to_dict(root: Root) -> dict:
+def _to_dict(root: _Root) -> dict:
     return {node.key: _children_to_dict(node.children) for node in root.children}
 
 
-def _children_to_dict(children: List[Union[str, Node]]) -> Optional[Union[dict, str]]:
+def _children_to_dict(children: List[Union[str, _Node]]) -> Optional[Union[dict, str]]:
     if not children:
         return None
 
-    _check_consistent_indent([child for child in children if isinstance(child, Node)])
+    _check_consistent_indent([child for child in children if isinstance(child, _Node)])
     first, *_ = children
     if isinstance(first, (str, list)):
         return first
     else:
-        assert all(isinstance(child, Node) for child in children)
+        assert all(isinstance(child, _Node) for child in children)
         return {child.key: _children_to_dict(child.children) for child in children}
 
 
-def _check_consistent_indent(nodes: List[Node]) -> None:
+def _check_consistent_indent(nodes: List[_Node]) -> None:
     if not nodes:
         return
 
@@ -127,9 +129,5 @@ def _check_consistent_indent(nodes: List[Node]) -> None:
             )
 
 
-def count_indent(line: str) -> int:
+def _count_indent(line: str) -> int:
     return len(line) - len(line.lstrip())
-
-
-if __name__ == "__main__":
-    parse(pathlib.Path("file.yml"))
