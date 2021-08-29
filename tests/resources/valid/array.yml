@@ -1,0 +1,5 @@
+single-value-array: [one]
+multi-value-array: [one, two, three]
+first:
+  indented-array: [one, two, three, four]
+array-with-wonky-comma-placement: [one  ,  two, three,   four]

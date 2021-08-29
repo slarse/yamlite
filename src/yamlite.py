@@ -12,6 +12,9 @@ _KEY_DELIMITER = ":"
 COMMENT_CHAR = "#"
 
 
+Value = Union[str, "Node", List[str]]
+
+
 @dataclasses.dataclass(frozen=True)
 class Root:
     children: List["Node"]
@@ -22,7 +25,7 @@ class Node:
     key: str
     indent: int
     parent: Union["Node", Root]
-    children: List[Union["Node", str]]
+    children: List[Value]
     line_nr: int
 
 
@@ -47,7 +50,7 @@ def parse(text: str) -> dict:
             parent = parent.parent
 
         key, rest = stripped.split(_KEY_DELIMITER)
-        children = [] if not rest else [rest.strip()]
+        children = [] if not rest else [_parse_terminal_value(rest)]
         node = Node(key, indent, parent, children, line_nr)
         parent.children.append(node)
 
@@ -73,6 +76,15 @@ def _is_comment_hash_at(line: str, idx: int) -> bool:
     return idx == 0 or idx > 0 and line[idx - 1].isspace()
 
 
+def _parse_terminal_value(raw_value: str) -> Union[str, List[str]]:
+    stripped = raw_value.strip()
+    return _parse_array(stripped) if stripped.startswith("[") else stripped
+
+
+def _parse_array(stripped: str) -> List[str]:
+    return [value.strip() for value in stripped[1:-1].split(",")]
+
+
 def _to_dict(root: Root) -> dict:
     return {node.key: _children_to_dict(node.children) for node in root.children}
 
@@ -83,7 +95,7 @@ def _children_to_dict(children: List[Union[str, Node]]) -> Optional[Union[dict, 
 
     _check_consistent_indent([child for child in children if isinstance(child, Node)])
     first, *_ = children
-    if isinstance(first, str):
+    if isinstance(first, (str, list)):
         return first
     else:
         assert all(isinstance(child, Node) for child in children)
