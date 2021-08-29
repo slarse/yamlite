@@ -1,3 +1,4 @@
+import contextlib
 import pathlib
 import re
 import sys
@@ -38,31 +39,40 @@ def parse(text: str) -> dict:
     parent: Union["Node", Root] = root
 
     for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
-        line = _remove_comments(raw_line)
-        if not line:
-            continue
-        stripped = line.strip()
-        _check_line_syntax(stripped, line_nr)
+        with _insert_line_number_in_error(line_nr):
+            line = _remove_comments(raw_line)
+            if not line:
+                continue
+            stripped = line.strip()
+            _check_line_syntax(stripped)
 
-        indent = count_indent(line)
+            indent = count_indent(line)
 
-        while not isinstance(parent, Root) and parent.indent >= indent:
-            parent = parent.parent
+            while not isinstance(parent, Root) and parent.indent >= indent:
+                parent = parent.parent
 
-        key, rest = stripped.split(_KEY_DELIMITER)
-        children = [] if not rest else [_parse_terminal_value(rest)]
-        node = Node(key, indent, parent, children, line_nr)
-        parent.children.append(node)
+            key, rest = stripped.split(_KEY_DELIMITER)
+            children = [] if not rest else [_parse_terminal_value(rest)]
+            node = Node(key, indent, parent, children, line_nr)
+            parent.children.append(node)
 
-        if not children:
-            parent = node
+            if not children:
+                parent = node
 
     return _to_dict(root)
 
 
-def _check_line_syntax(line: str, line_nr: int) -> None:
+@contextlib.contextmanager
+def _insert_line_number_in_error(line_nr: int):
+    try:
+        yield
+    except Exception as exc:
+        raise YamliteError(f"Line {line_nr}: {str(exc)}") from exc
+
+
+def _check_line_syntax(line: str) -> None:
     if not re.match(_LINE_PATTERN, line):
-        raise YamliteError(f"Line {line_nr}: expected line to start with '<key>:'")
+        raise YamliteError("expected line to start with '<key>:'")
 
 
 def _remove_comments(line: str) -> str:
@@ -82,6 +92,8 @@ def _parse_terminal_value(raw_value: str) -> Union[str, List[str]]:
 
 
 def _parse_array(stripped: str) -> List[str]:
+    if not stripped.endswith("]"):
+        raise YamliteError(f"array must start and end on same line")
     return [value.strip() for value in stripped[1:-1].split(",")]
 
 
@@ -110,9 +122,8 @@ def _check_consistent_indent(nodes: List[Node]) -> None:
     for node in nodes[1:]:
         if node.indent != expected_indent:
             raise YamliteError(
-                f"Line {node.line_nr}: bad indentation, "
-                f"expected {expected_indent} "
-                f"but was {node.indent}"
+                    f"Line {node.line_nr}: bad indentation, "
+                    f"expected {expected_indent} but was {node.indent}"
             )
 
 

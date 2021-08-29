@@ -1,0 +1,3 @@
+# Line 2: array must start and end on same line
+multiline-array: [one, two,
+  three]
