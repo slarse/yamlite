@@ -1,0 +1,5 @@
+# Line 5: bad indentation, expected 5 but was 4
+first:
+   second:
+     third: third's value
+    child-of-second: but with other indentation than third
