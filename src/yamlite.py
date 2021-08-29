@@ -15,12 +15,12 @@ _KEY_DELIMITER = ":"
 _COMMENT_CHAR = "#"
 
 
-_Value = Union[str, "_Node", List[str]]
+_Value = Union[str, List["_Node"], List[str]]
 
 
 @dataclasses.dataclass(frozen=True)
 class _Root:
-    children: List["_Node"]
+    value: List["_Node"]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -28,8 +28,9 @@ class _Node:
     key: str
     indent: int
     parent: Union["_Node", _Root]
-    children: List[_Value]
+    value: _Value
     line_nr: int
+    is_terminal: bool
 
 
 class YamliteError(RuntimeError):
@@ -37,8 +38,8 @@ class YamliteError(RuntimeError):
 
 
 def loads(text: str) -> dict:
-    root = _Root(children=[])
-    parent: Union["_Node", _Root] = root
+    root = _Root(value=[])
+    parent: Union[_Node, _Root] = root
 
     for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
         with _insert_line_number_in_error(line_nr):
@@ -54,11 +55,11 @@ def loads(text: str) -> dict:
                 parent = parent.parent
 
             key, rest = stripped.split(_KEY_DELIMITER)
-            children = [] if not rest else [_parse_terminal_value(rest)]
-            node = _Node(key, indent, parent, children, line_nr)
-            parent.children.append(node)
+            value = [] if not rest else _parse_terminal_value(rest)
+            node = _Node(key, indent, parent, value, line_nr, not not rest)
+            parent.value.append(node)
 
-            if not children:
+            if not value:
                 parent = node
 
     return _to_dict(root)
@@ -100,25 +101,26 @@ def _parse_array(stripped: str) -> List[str]:
 
 
 def _to_dict(root: _Root) -> dict:
-    return {node.key: _children_to_dict(node.children) for node in root.children}
+    return {node.key: _children_to_dict(node) for node in root.value}
 
 
-def _children_to_dict(children: List[Union[str, _Node]]) -> Optional[Union[dict, str]]:
-    if not children:
+def _children_to_dict(node: _Node) -> Optional[Union[dict, str]]:
+    value = node.value
+    if not value:
         return None
 
-    _check_consistent_indent([child for child in children if isinstance(child, _Node)])
-    first, *_ = children
-    if isinstance(first, (str, list)):
-        return first
-    else:
-        assert all(isinstance(child, _Node) for child in children)
-        return {child.key: _children_to_dict(child.children) for child in children}
+    if node.is_terminal:
+        return value
+    else: # is List[_Node]
+        _check_consistent_indent(value)
+        return {child.key: _children_to_dict(child) for child in value}
 
 
-def _check_consistent_indent(nodes: List[_Node]) -> None:
-    if not nodes:
+def _check_consistent_indent(value: _Value) -> None:
+    if not value:
         return
+
+    nodes: List[_Node] = value
 
     expected_indent = nodes[0].indent
     for node in nodes[1:]:
