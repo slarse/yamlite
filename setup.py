@@ -10,19 +10,7 @@ with open("src/__version.py", mode="r", encoding="utf-8") as f:
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
-test_requirements = [
-    "appdirs",
-    "bandit",
-    "black",
-    "codecov",
-    "daiquiri",
-    "flake8",
-    "pylint",
-    "pytest-cov>=2.5.1",
-    "pytest-mock",
-    "pytest>=4.0.0",
-    "pyyaml",
-]
+test_requirements = ["pytest>=4.0.0", "pyyaml"]
 
 setup(
     name="yamlite",
@@ -34,9 +22,7 @@ setup(
     author_email="slarse@slar.se",
     url="https://github.com/slarse/yamlite",
     download_url=(
-        "https://github.com/slarse/yamlite/archive/v{}.tar.gz".format(
-            __version__
-        )
+        "https://github.com/slarse/yamlite/archive/v{}.tar.gz".format(__version__)
     ),
     license="MIT",
     package_dir={"": "src"},
