@@ -43,6 +43,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "License :: OSI Approved :: MIT License",
         "Operating System :: POSIX",
-        "Operating System :: Windows",
+        "Operating System :: Microsoft :: Windows",
     ],
 )
