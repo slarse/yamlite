@@ -34,7 +34,7 @@ class YamliteError(RuntimeError):
     pass
 
 
-def parse(text: str) -> dict:
+def loads(text: str) -> dict:
     root = Root(children=[])
     parent: Union["Node", Root] = root
 
@@ -122,8 +122,8 @@ def _check_consistent_indent(nodes: List[Node]) -> None:
     for node in nodes[1:]:
         if node.indent != expected_indent:
             raise YamliteError(
-                    f"Line {node.line_nr}: bad indentation, "
-                    f"expected {expected_indent} but was {node.indent}"
+                f"Line {node.line_nr}: bad indentation, "
+                f"expected {expected_indent} but was {node.indent}"
             )
 
 
