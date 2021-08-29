@@ -70,7 +70,10 @@ def _to_dict(root: Root) -> dict:
     return {node.key: _children_to_dict(node.children) for node in root.children}
 
 
-def _children_to_dict(children: List[Union[str, Node]]) -> Union[dict, str]:
+def _children_to_dict(children: List[Union[str, Node]]) -> Optional[Union[dict, str]]:
+    if not children:
+        return None
+
     _check_consistent_indent([child for child in children if isinstance(child, Node)])
     first, *_ = children
     if isinstance(first, str):

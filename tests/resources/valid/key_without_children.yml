@@ -1,0 +1,3 @@
+first:
+  key-without-children: # this value is implicitly None
+second: value
