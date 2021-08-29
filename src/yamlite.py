@@ -6,7 +6,7 @@ import dataclasses
 
 from typing import Union, List, Optional
 
-_LINE_PATTERN = re.compile(r"^\w+:")
+_LINE_PATTERN = re.compile(r"^[-_\w]+:")
 _KEY_DELIMITER = ":"
 
 COMMENT_CHAR = "#"
@@ -38,13 +38,15 @@ def parse(text: str) -> dict:
         line = _remove_comments(raw_line)
         if not line:
             continue
+        stripped = line.strip()
+        _check_line_syntax(stripped, line_nr)
 
         indent = count_indent(line)
 
         while not isinstance(parent, Root) and parent.indent >= indent:
             parent = parent.parent
 
-        key, rest = line.strip().split(_KEY_DELIMITER)
+        key, rest = stripped.split(_KEY_DELIMITER)
         children = [] if not rest else [rest.strip()]
         node = Node(key, indent, parent, children, line_nr)
         parent.children.append(node)
@@ -53,6 +55,11 @@ def parse(text: str) -> dict:
             parent = node
 
     return _to_dict(root)
+
+
+def _check_line_syntax(line: str, line_nr: int) -> None:
+    if not re.match(_LINE_PATTERN, line):
+        raise YamliteError(f"Line {line_nr}: expected line to start with '<key>:'")
 
 
 def _remove_comments(line: str) -> str:

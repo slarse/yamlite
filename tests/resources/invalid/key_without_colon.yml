@@ -1,0 +1,3 @@
+# Line 3: expected line to start with '<key>:'
+first: value
+second value
