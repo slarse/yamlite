@@ -1,3 +1,3 @@
-from .yamliny import loads
+from yamliny._yamliny import loads, YamlinyError
 
-__all__ = ["loads"]
+__all__ = ["loads", "YamlinyError"]

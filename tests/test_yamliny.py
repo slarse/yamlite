@@ -6,6 +6,8 @@ import yaml
 
 import yamliny
 
+from yamliny._yamliny import _COMMENT_CHAR
+
 RESOURCES = pathlib.Path(__file__).parent / "resources"
 VALID_INPUTS = RESOURCES / "valid"
 INVALID_INPUTS = RESOURCES / "invalid"
@@ -59,4 +61,4 @@ def test_raises_on_invalid_input(input_file: pathlib.Path):
 
 
 def _parse_expected_error_message(line: str) -> str:
-    return line[line.index(yamliny._COMMENT_CHAR) + 1 :].strip()
+    return line[line.index(_COMMENT_CHAR) + 1 :].strip()
