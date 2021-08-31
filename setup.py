@@ -5,7 +5,7 @@ with open("README.md", mode="r", encoding="utf-8") as f:
     readme = f.read()
 
 # parse the version instead of importing it to avoid dependency-related crashes
-with open("src/__version.py", mode="r", encoding="utf-8") as f:
+with open("yamliny/__version.py", mode="r", encoding="utf-8") as f:
     line = f.readline()
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
@@ -25,8 +25,8 @@ setup(
         "https://github.com/slarse/yamliny/archive/v{}.tar.gz".format(__version__)
     ),
     license="MIT",
-    package_dir={"": "src"},
-    packages=find_packages(where="src", exclude=("tests", "docs")),
+    packages=find_packages(where=".", exclude=("tests", "docs")),
+    package_data={"yamliny": ["py.typed"]},
     py_modules=["yamliny"],
     tests_require=test_requirements,
     extras_require=dict(TEST=test_requirements),
