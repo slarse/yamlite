@@ -10,8 +10,6 @@ with open("yamliny/__version.py", mode="r", encoding="utf-8") as f:
     __version__ = line.split("=")[1].strip(" '\"\n")
     assert re.match(r"^\d+(\.\d+){2}(-(alpha|beta|rc)(\.\d+)?)?$", __version__)
 
-test_requirements = ["coverage", "pytest", "pyyaml"]
-
 setup(
     name="yamliny",
     version=__version__,
@@ -28,8 +26,10 @@ setup(
     packages=find_packages(where=".", exclude=("tests", "docs")),
     package_data={"yamliny": ["py.typed"]},
     py_modules=["yamliny"],
-    tests_require=test_requirements,
-    extras_require=dict(TEST=test_requirements),
+    install_requires=[
+        "dataclasses>='0.7';python_version<'3.7'",
+    ],
+    extras_require=dict(TEST=["coverage", "pytest", "pyyaml"]),
     include_package_data=True,
     zip_safe=False,
     classifiers=[
