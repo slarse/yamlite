@@ -5,9 +5,9 @@ import sys
 
 import dataclasses
 
-from typing import Union, List, Optional, cast
+from typing import Any, Union, List, Optional, cast
 
-__all__ = ["YamlinyError", "loads"]
+__all__ = ["YamlinyError", "loads", "dumps"]
 
 _LINE_PATTERN = re.compile(r"^[-_\w]+:")
 _KEY_DELIMITER = ":"
@@ -142,3 +142,44 @@ def _check_consistent_indent(value: List[_Node]) -> None:
 
 def _count_indent(line: str) -> int:
     return len(line) - len(line.lstrip())
+
+def dumps(obj: dict) -> str:
+    """Produce YAMLiny from a dictionary.
+
+    Keys must be strings, but values can be arbitrary objects. Some types are
+    treated specially.
+
+    1. Dictionaries can be arbitrarily nested to create nesting in the YAMLiny
+    output
+    2. Lists are printed as arrays
+    3. None is not printed at all
+
+    Args:
+        obj: A dictionary to convert to YMALiny
+    Returns:
+        A YAMLiny-formatted string
+    """
+    return "\n".join(_dumps(obj))
+
+def _dumps(d: dict, indent_level: int = 0) -> List[str]:
+    content = []
+    indent = " " * indent_level * 2
+
+    for key, value in d.items():
+        if isinstance(value, dict):
+            sub_content = _dumps(value, indent_level + 1)
+            content.append(f"{indent}{key}:")
+            content.extend(sub_content)
+        else:
+            content.append(f"{indent}{key}: {_value_to_str(value)}")
+
+    return content
+
+def _value_to_str(value: Any) -> str:
+    if value is None:
+        return ""
+    elif isinstance(value, list):
+        values = map(_value_to_str, value)
+        return f"[{', '.join(values)}]"
+    else:
+        return str(value)

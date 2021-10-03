@@ -45,6 +45,17 @@ def _find_invalid_inputs():
         if file.is_file() and file.suffix == ".yml"
     ]
 
+@pytest.mark.parametrize(
+    "input_file", _find_valid_inputs(), ids=_get_file_ids(_find_valid_inputs())
+)
+def test_loads_dumps_roundtrip_for_valid_input(input_file):
+    raw = input_file.read_text(encoding=ENCODING)
+
+    yamlined = yamliny.loads(raw)
+    dumped = yamliny.dumps(yamlined)
+    yamlined_again = yamliny.loads(dumped)
+
+    assert yamlined == yamlined_again
 
 @pytest.mark.parametrize(
     "input_file", _find_invalid_inputs(), ids=_get_file_ids(_find_invalid_inputs())
