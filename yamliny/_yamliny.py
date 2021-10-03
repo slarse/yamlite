@@ -155,17 +155,17 @@ def dumps(obj: dict) -> str:
     3. None is not printed at all
 
     Args:
-        obj: A dictionary to convert to YMALiny
+        obj: A dictionary to convert to YAMLiny
     Returns:
         A YAMLiny-formatted string
     """
     return "\n".join(_dumps(obj))
 
-def _dumps(d: dict, indent_level: int = 0) -> List[str]:
+def _dumps(obj: dict, indent_level: int = 0) -> List[str]:
     content = []
     indent = " " * indent_level * 2
 
-    for key, value in d.items():
+    for key, value in obj.items():
         if isinstance(value, dict):
             sub_content = _dumps(value, indent_level + 1)
             content.append(f"{indent}{key}:")
