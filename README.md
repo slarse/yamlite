@@ -13,7 +13,8 @@ pip install yamliny
 
 ## Usage
 
-YAMLiny currently only has parsing functionality.
+YAMLiny currently offers parsing of text to a dictionary with `yamliny.loads`
+and dumping a dictionary to YAMLiny text with `yamliny.dumps`.
 
 ```python
 import yamliny
@@ -26,8 +27,12 @@ multivalue-key: # you can also use inline comments!
     key: value
 """.strip()
 
+# You can turn YAMLiny into a dictionary with `loads`
 content = yamliny.loads(yamliny_text)
 # content is a dict with:
 # {'key': 'value',
 #  'multivalue-key': {'array': ['one', 'two', 'three'], 'key': 'value'}}
+
+# And go back to YAMLiny with `dumps`
+yamliny_text_again = yamliny.dumps(content)
 ```
