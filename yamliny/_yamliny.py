@@ -3,7 +3,7 @@ import re
 
 import dataclasses
 
-from typing import Any, Union, List, cast
+from typing import Any, Union, List, cast, Iterable
 
 __all__ = ["YamlinyError", "loads", "dumps"]
 
@@ -18,6 +18,13 @@ _Value = Union[List["_Node"], _TerminalValue]
 
 
 @dataclasses.dataclass(frozen=True)
+class _Line:
+    line_nr: int
+    indent: int
+    content: str
+
+
+@dataclasses.dataclass(frozen=True)
 class _Root:
     value: List["_Node"]
 
@@ -29,11 +36,10 @@ class _Root:
 @dataclasses.dataclass(frozen=True)
 class _Node:
     key: str
-    indent: int
     parent: Union["_Node", _Root]
     value: _Value
-    line_nr: int
     is_terminal: bool
+    line: _Line
 
 
 class YamlinyError(RuntimeError):
@@ -41,35 +47,62 @@ class YamlinyError(RuntimeError):
 
 
 def loads(text: str) -> dict:
+    """Parse a string of YAMLiny into a dictionary.
+
+    Args:
+        text: A string of YAMLiny.
+    Returns:
+        A dictionary with the parsed content of the input.
+    """
     root = _Root(value=[])
     parent: Union[_Node, _Root] = root
 
-    for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
-        with _insert_line_number_in_error(line_nr):
-            line = _remove_comments(raw_line)
-            if not line:
-                continue
-            stripped = line.strip()
-            _check_line_syntax(stripped)
-
-            indent = _count_indent(line)
-
-            while not isinstance(parent, _Root) and parent.indent >= indent:
-                parent = parent.parent
-
-            if parent.is_terminal:
-                raise YamlinyError("bad indentation")
-            
-            key, rest = stripped.split(_KEY_DELIMITER)
-            value: _Value = [] if not rest else _parse_terminal_value(rest)
-            node = _Node(key, indent, parent, value, line_nr, not not rest)
-
-            assert isinstance(parent.value, list)
-            cast(List[_Node], parent.value).append(node)
-
-            parent = node
+    for line in _get_processed_lines(text):
+        with _insert_line_number_in_error(line.line_nr):
+            parent = _line_to_node(line, parent)
 
     return _to_dict(root)
+
+
+def _get_processed_lines(text: str) -> Iterable[_Line]:
+    for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
+        commentless_line = _remove_comments(raw_line)
+        if commentless_line == "":
+            continue
+
+        indent = _count_indent(commentless_line)
+        line = commentless_line.strip()
+
+        if not re.match(_LINE_PATTERN, line):
+            raise YamlinyError(f"Line {line_nr}: expected line to start with '<key>:'")
+
+        yield _Line(line_nr=line_nr, indent=indent, content=line)
+
+
+def _line_to_node(line: _Line, prev_parent: Union[_Node, _Root]) -> _Node:
+    parent = _search_for_closest_parent_with_lesser_indentation(
+        prev_parent, line.indent
+    )
+
+    key, rest = line.content.split(_KEY_DELIMITER)
+    value = [] if not rest else _parse_terminal_value(rest)
+    node = _Node(key, parent, value, bool(rest), line)
+
+    cast(List[_Node], parent.value).append(node)
+
+    return node
+
+
+def _search_for_closest_parent_with_lesser_indentation(
+    node: Union[_Node, _Root], target_indent: int
+) -> Union[_Node, _Root]:
+    while not isinstance(node, _Root) and node.line.indent >= target_indent:
+        node = node.parent
+
+    if node.is_terminal:
+        raise YamlinyError("bad indentation")
+
+    return node
 
 
 @contextlib.contextmanager
@@ -78,11 +111,6 @@ def _insert_line_number_in_error(line_nr: int):
         yield
     except Exception as exc:
         raise YamlinyError(f"Line {line_nr}: {str(exc)}") from exc
-
-
-def _check_line_syntax(line: str) -> None:
-    if not re.match(_LINE_PATTERN, line):
-        raise YamlinyError("expected line to start with '<key>:'")
 
 
 def _remove_comments(line: str) -> str:
@@ -117,7 +145,7 @@ def _children_to_dict(node: _Node) -> Union[_TerminalValue, dict, None]:
 
     if node.is_terminal:
         return cast(_TerminalValue, node.value)
-    else: # is List[_Node]
+    else:  # is List[_Node]
         value = cast(List[_Node], node.value)
         _check_consistent_indent(value)
         return {child.key: _children_to_dict(child) for child in value}
@@ -129,17 +157,18 @@ def _check_consistent_indent(value: List[_Node]) -> None:
 
     nodes: List[_Node] = value
 
-    expected_indent = nodes[0].indent
+    expected_indent = nodes[0].line.indent
     for node in nodes[1:]:
-        if node.indent != expected_indent:
+        if node.line.indent != expected_indent:
             raise YamlinyError(
-                f"Line {node.line_nr}: bad indentation, "
-                f"expected {expected_indent} but was {node.indent}"
+                f"Line {node.line.line_nr}: bad indentation, "
+                f"expected {expected_indent} but was {node.line.indent}"
             )
 
 
 def _count_indent(line: str) -> int:
     return len(line) - len(line.lstrip())
+
 
 def dumps(obj: dict) -> str:
     """Produce YAMLiny from a dictionary.
@@ -159,6 +188,7 @@ def dumps(obj: dict) -> str:
     """
     return "\n".join(_dumps(obj))
 
+
 def _dumps(obj: dict, indent_level: int = 0) -> List[str]:
     content = []
     indent = " " * indent_level * 2
@@ -172,6 +202,7 @@ def _dumps(obj: dict, indent_level: int = 0) -> List[str]:
             content.append(f"{indent}{key}: {_value_to_str(value)}")
 
     return content
+
 
 def _value_to_str(value: Any) -> str:
     if value is None:
