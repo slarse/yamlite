@@ -55,11 +55,11 @@ def loads(text: str) -> dict:
         A dictionary with the parsed content of the input.
     """
     root = _Root(value=[])
-    parent: Union[_Node, _Root] = root
+    node: Union[_Node, _Root] = root
 
     for line in _get_processed_lines(text):
         with _insert_line_number_in_error(line.line_nr):
-            parent = _line_to_node(line, parent)
+            node = _line_to_node(line, prev_node=node)
 
     return _to_dict(root)
 
@@ -79,15 +79,14 @@ def _get_processed_lines(text: str) -> Iterable[_Line]:
         yield _Line(line_nr=line_nr, indent=indent, content=line)
 
 
-def _line_to_node(line: _Line, prev_parent: Union[_Node, _Root]) -> _Node:
+def _line_to_node(line: _Line, prev_node: Union[_Node, _Root]) -> _Node:
     parent = _search_for_closest_parent_with_lesser_indentation(
-        prev_parent, line.indent
+        prev_node, target_indent=line.indent
     )
-
     key, rest = line.content.split(_KEY_DELIMITER)
     value = [] if not rest else _parse_terminal_value(rest)
-    node = _Node(key, parent, value, bool(rest), line)
 
+    node = _Node(key, parent, value, bool(rest), line)
     cast(List[_Node], parent.value).append(node)
 
     return node
