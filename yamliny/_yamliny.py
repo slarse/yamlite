@@ -47,6 +47,13 @@ class YamlinyError(RuntimeError):
 
 
 def loads(text: str) -> dict:
+    """Parse a string of YAMLiny into a dictionary.
+
+    Args:
+        text: A string of YAMLiny.
+    Returns:
+        A dictionary with the parsed content of the input.
+    """
     root = _Root(value=[])
     parent: Union[_Node, _Root] = root
 
