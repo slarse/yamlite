@@ -1,11 +1,9 @@
 import contextlib
-import pathlib
 import re
-import sys
 
 import dataclasses
 
-from typing import Any, Union, List, Optional, cast
+from typing import Any, Union, List, cast
 
 __all__ = ["YamlinyError", "loads", "dumps"]
 
