@@ -52,15 +52,7 @@ def loads(text: str) -> dict:
 
     for line in _get_processed_lines(text):
         with _insert_line_number_in_error(line.line_nr):
-            _check_line_syntax(line.content)
-            parent = _search_for_closest_parent(parent, line.indent)
-
-            node = _to_node(line, parent)
-
-            assert isinstance(parent.value, list)
-            cast(List[_Node], parent.value).append(node)
-
-            parent = node
+            parent = _line_to_node(line, parent)
 
     return _to_dict(root)
 
@@ -68,16 +60,33 @@ def loads(text: str) -> dict:
 def _get_processed_lines(text: str) -> Iterable[_Line]:
     for line_nr, raw_line in enumerate(text.strip().split("\n"), start=1):
         commentless_line = _remove_comments(raw_line)
-        if not commentless_line:
+        if commentless_line == "":
             continue
 
         indent = _count_indent(commentless_line)
         line = commentless_line.strip()
 
+        if not re.match(_LINE_PATTERN, line):
+            raise YamlinyError(f"Line {line_nr}: expected line to start with '<key>:'")
+
         yield _Line(line_nr=line_nr, indent=indent, content=line)
 
 
-def _search_for_closest_parent(
+def _line_to_node(line: _Line, prev_parent: Union[_Node, _Root]) -> _Node:
+    parent = _search_for_closest_parent_with_lesser_indentation(
+        prev_parent, line.indent
+    )
+
+    key, rest = line.content.split(_KEY_DELIMITER)
+    value = [] if not rest else _parse_terminal_value(rest)
+    node = _Node(key, parent, value, bool(rest), line)
+
+    cast(List[_Node], parent.value).append(node)
+
+    return node
+
+
+def _search_for_closest_parent_with_lesser_indentation(
     node: Union[_Node, _Root], target_indent: int
 ) -> Union[_Node, _Root]:
     while not isinstance(node, _Root) and node.line.indent >= target_indent:
@@ -89,25 +98,12 @@ def _search_for_closest_parent(
     return node
 
 
-def _to_node(line: _Line, parent: Union[_Node, _Root]) -> _Node:
-    key, rest = line.content.split(_KEY_DELIMITER)
-    value: _Value = [] if not rest else _parse_terminal_value(rest)
-    node = _Node(key, parent, value, bool(rest), line)
-
-    return node
-
-
 @contextlib.contextmanager
 def _insert_line_number_in_error(line_nr: int):
     try:
         yield
     except Exception as exc:
         raise YamlinyError(f"Line {line_nr}: {str(exc)}") from exc
-
-
-def _check_line_syntax(line: str) -> None:
-    if not re.match(_LINE_PATTERN, line):
-        raise YamlinyError("expected line to start with '<key>:'")
 
 
 def _remove_comments(line: str) -> str:
